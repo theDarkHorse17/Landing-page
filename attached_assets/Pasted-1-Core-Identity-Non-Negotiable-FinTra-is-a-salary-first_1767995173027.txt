@@ -1,0 +1,478 @@
+1. Core Identity (Non-Negotiable)
+FinTra is a salary-first financial brain.
+It exists to own the moment salary is credited, guide decisions across the month, and reduce post-payday anxiety through behavioral structure.
+FinTra is:
+✅ A behavior-driven clarity system
+
+
+✅ A personal financial guide (pre-execution)
+
+
+✅ A habit-forming money companion
+
+
+FinTra is NOT:
+❌ An expense tracker
+
+
+❌ A bank
+
+
+❌ A payments app (yet)
+
+
+❌ A CA replacement (yet)
+
+
+❌ A credit scoring system
+
+
+Tagline (Internal):
+ From salary credited → salary well spent → clarity after payday
+If a feature does not strengthen this loop, it is off-mission.
+
+2. Why FinTra Exists (The Problem We Obsess Over)
+The Reality
+Young salaried professionals:
+Earn consistently
+
+
+Still feel broke mid-month
+
+
+Experience recurring salary anxiety
+
+
+Know what they should do — but don’t
+
+
+This is not an intelligence problem.
+ It is a behavioral architecture problem.
+The Core Failure of Existing Apps
+Most finance apps are:
+Reactive
+
+
+Retrospective
+
+
+Emotionally blind
+
+
+Guilt-driven
+
+
+They analyze after damage is done.
+FinTra exists because behavior changes before money is spent — not after.
+
+3. The Primary User (Locked for Phase 1)
+Who FinTra is for (now):
+Age: 21–33
+
+
+Income: ₹30,000 – ₹1.2L/month
+
+
+Fixed monthly salary
+
+
+Early earning journey
+
+
+Wants structure, not complexity
+
+
+Who FinTra is NOT for (yet):
+Freelancers
+
+
+Gig workers
+
+
+Business owners
+
+
+Ultra-high earners
+
+
+Irregular income cycles
+
+
+Guardrail:
+Expansion only happens after FinTra becomes indispensable to salaried users.
+
+4. Core Hypotheses (What We Are Betting On)
+H1 — Salary Day Is the Emotional Anchor
+Salary credit = psychological reset moment
+
+
+Users are most receptive immediately after income
+
+
+Post-salary clarity > end-month analytics
+
+
+Mitigation:
+ Salary-day guidance is optional, adjustable, non-intrusive.
+
+H2 — Behavior Beats Analytics
+Data does not change behavior
+
+
+Habits do
+
+
+Emotion + structure > charts
+
+
+FinTra optimizes for:
+Daily discipline
+
+
+Monthly control
+
+
+Long-term confidence
+
+
+
+H3 — Guidance > Tracking
+Tracking without guidance creates:
+Awareness without action
+
+
+Anxiety without closure
+
+
+FinTra must always pair insight with a next step.
+
+5. Design Philosophy (Sacred Rules)
+1. Non-Guilt Nudges
+No shaming
+
+
+No red panic UI
+
+
+No moral judgment
+
+
+We guide.
+ We do not scold.
+
+2. Progressive Authority
+Trust is earned, not assumed.
+FinTra:
+Starts as a helper
+
+
+Evolves into a guide
+
+
+Eventually becomes a decision partner
+
+
+Never jumps ahead of trust.
+
+3. Emotional Coherence
+A screen that warns about money stress cannot celebrate dopamine rewards blindly.
+Tone must stay consistent:
+Calm
+
+
+Adult
+
+
+Supportive
+
+
+Serious, not sterile
+
+
+
+6. PULSE — The Financial Brain
+PULSE is not a chatbot.
+ It is not AI for novelty.
+PULSE is:
+A behavioral intelligence layer
+
+
+A personal CA-like guide
+
+
+Contextual, not omniscient
+
+
+What PULSE Does
+Interprets spending behavior
+
+
+Detects risk patterns
+
+
+Nudges before damage
+
+
+Reinforces discipline
+
+
+What PULSE Never Claims
+Perfect prediction
+
+
+Absolute correctness
+
+
+Financial execution authority
+
+
+Promise discipline > predictive accuracy.
+
+7. Pulse Points — The Engagement Currency
+Pulse Points are not money.
+ They are behavioral signals.
+Why Pulse Points Exist
+Reward discipline
+
+
+Reinforce habits
+
+
+Create progression
+
+
+What Pulse Points Represent
+Consistency
+
+
+Intent
+
+
+Engagement
+
+
+What Pulse Points Deliberately Avoid
+Gambling psychology
+
+
+Spend-to-win dynamics
+
+
+Trivializing finance
+
+
+
+How Pulse Points Are Earned
+Daily expense logging
+
+
+Usage streaks
+
+
+Controlled bug reporting
+
+
+No random rewards.
+ No dark patterns.
+
+Where Pulse Points Are Spent
+Limited PULSE access
+
+
+Feature requests (very high cost)
+
+
+Controlled premium unlocks
+
+
+Internal Rule:
+If points ever become the product, we’ve failed.
+
+8. Pulse Score (Extreme Caution Zone)
+Pulse Score is:
+Internal
+
+
+Contextual
+
+
+Motivational
+
+
+Pulse Score is NOT:
+Creditworthiness
+
+
+Eligibility
+
+
+A public ranking signal
+
+
+Absolute Guardrails
+No external sharing by default
+
+
+No partner use without strict boundaries
+
+
+No eligibility decisions
+
+
+No lending shortcuts
+
+
+One breach = irreversible trust damage.
+
+9. Monetization Doctrine (Trust First)
+FinTra does not monetize desperation.
+Acceptable Monetization
+Subscriptions for clarity & control
+
+
+Premium insights
+
+
+Optional services
+
+
+Dangerous Monetization
+Pay-to-win behavior
+
+
+Hidden incentives
+
+
+Biased recommendations
+
+
+Internal Rule:
+If a recommendation cannot be defended without mentioning revenue, it should not exist.
+
+10. Product Layers (Why Each Exists)
+🟢 FREE — Trust & Habit
+Expense logging
+
+
+Salary entry
+
+
+Basic streaks
+
+
+Basic Pulse Score
+
+
+Monthly clarity
+
+
+Purpose: Daily usage + trust
+
+🟡 FREEMIUM — Curiosity
+Limited PULSE insights
+
+
+Point spending
+
+
+Light customization
+
+
+Purpose: Intent detection
+
+🔴 PREMIUM — Decision Power
+Full PULSE intelligence
+
+
+Forecasts & burn-rate warnings
+
+
+Unlimited customization
+
+
+Advanced analytics
+
+
+Purpose: Monetization through clarity
+
+11. Ethics & Boundaries (Hard Lines)
+FinTra will never:
+Sell user data
+
+
+Manipulate spending
+
+
+Push unnecessary products
+
+
+Shame users
+
+
+Gamify losses
+
+
+Trust > growth.
+ Always.
+
+12. Risks We Acknowledge (Not Blind To)
+Nudge fatigue
+
+
+Gamification backlash
+
+
+Partial trust instability
+
+
+Regulatory ambiguity
+
+
+Over-expansion
+
+
+These are known risks, not surprises.
+
+13. Long-Term Direction (Not Promises)
+Individual → Family finance
+
+
+B2C → B2B behavioral SaaS
+
+
+App → Financial OS
+
+
+Guidance → Execution (carefully)
+
+
+Only after:
+Depth
+
+
+Trust
+
+
+Indispensability
+
+
+
+14. Founder Doctrine
+FinTra is built from lived experience, not theory.
+The founder:
+Has felt salary anxiety
+
+
+Has lived paycheck cycles
+
+
+Has built the MVP solo
+
+
+This is obsession, not opportunism.
+
+15. Final Law (The One Line That Matters)
+FinTra does not exist to track money.
+ It exists to change how people relate to money — starting on salary day.
+Everything else is execution.
+
