@@ -1,6 +1,5 @@
-import { motion } from "framer-motion";
+import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { 
-  Zap, 
   TrendingUp, 
   Shield, 
   Brain, 
@@ -12,6 +11,9 @@ import {
   Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import Waitlist from "./Waitlist";
+
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -28,33 +30,88 @@ const staggerContainer = {
 };
 
 function Navbar() {
+  const { scrollY } = useScroll();
+
+  const [hidden, setHidden] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // tune these
+  const HIDE_AFTER_PX = 80;      // don't hide immediately near top
+  const DELTA = 8;              // minimum scroll change to toggle (prevents jitter)
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const prev = scrollY.getPrevious() ?? 0;
+    const diff = latest - prev;
+
+    setScrolled(latest > 8);
+
+    // recommended UX:
+    // scrolling DOWN -> hide
+    // scrolling UP   -> show
+    if (latest > HIDE_AFTER_PX && diff > DELTA) {
+      setHidden(true);
+    } else if (diff < -DELTA) {
+      setHidden(false);
+    }
+  });
+
+  // ensure navbar shows again when user jumps to top (e.g., anchor click)
+  useEffect(() => {
+    if (!scrolled) setHidden(false);
+  }, [scrolled]);
+
   return (
-    <motion.nav 
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-      className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
+    <motion.nav
+      initial={{ y: 0, opacity: 1 }}
+      animate={hidden ? { y: "-110%", opacity: 0 } : { y: 0, opacity: 1 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className={[
+        "fixed top-0 left-0 right-0 z-50 px-6 py-4",
+        // optional background polish:
+        scrolled
+          ? "bg-background/70 backdrop-blur border-b border-border/40"
+          : "bg-transparent",
+      ].join(" ")}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center">
-            <Zap className="w-5 h-5 text-background" strokeWidth={2.5} />
-          </div>
-          <span className="font-display text-xl font-semibold tracking-tight">FinTra</span>
+          <a href="#" className="font-display text-3xl font-semibold tracking-tight">
+            FinTra.
+          </a>
         </div>
-        
+
         <div className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors text-sm" data-testid="link-features">Features</a>
-          <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors text-sm" data-testid="link-how-it-works">How It Works</a>
-          <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors text-sm" data-testid="link-pricing">Pricing</a>
+          <a
+            href="#features"
+            className="text-muted-foreground hover:text-foreground transition-colors text-sm"
+            data-testid="link-features"
+          >
+            Features
+          </a>
+          <a
+            href="#how-it-works"
+            className="text-muted-foreground hover:text-foreground transition-colors text-sm"
+            data-testid="link-how-it-works"
+          >
+            How It Works
+          </a>
+          <a
+            href="#cta"
+            className="text-muted-foreground hover:text-foreground transition-colors text-sm"
+            data-testid="link-pricing"
+          >
+            Pricing
+          </a>
         </div>
-        
+
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="text-muted-foreground" data-testid="button-login">
-            Log in
-          </Button>
-          <Button size="sm" className="gap-2 font-medium" data-testid="button-get-started">
-            Get Started
+          
+          <Button 
+          size="sm" 
+          className="gap-2 font-medium  text-white" 
+          data-testid="button-get-started"
+          onClick={() => window.dispatchEvent(new Event("fintra:waitlist-open"))}>
+            Join Waitlist
             <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
@@ -109,13 +166,21 @@ function Hero() {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <Button size="lg" className="gap-2 px-8 h-14 text-base font-medium glow-primary" data-testid="button-start-free">
+          <Button size="lg" className="gap-2 px-8 h-14 text-base font-medium glow-primary text-white" data-testid="button-start-free">
             Start Free
             <ArrowRight className="w-5 h-5" />
           </Button>
-          <Button variant="outline" size="lg" className="gap-2 px-8 h-14 text-base border-border/50 bg-card/50 backdrop-blur-sm" data-testid="button-see-demo">
+          <a href="#how-it-works">
+            <Button variant="outline" size="lg" 
+            className="gap-2 px-8 h-14 text-base 
+            border border-white/30 hover:border-white/140 transition
+            bg-card/50 backdrop-blur-sm" 
+            data-testid="button-see-demo">
             See How It Works
-          </Button>
+            </Button>
+          </a>
+          
+         
         </motion.div>
         
         <motion.div
@@ -307,7 +372,7 @@ function HowItWorks() {
 
 function CTA() {
   return (
-    <section className="relative py-32 overflow-hidden">
+    <section id="cta" className="relative py-32 overflow-hidden">
       <div className="absolute inset-0 noise-overlay" />
       <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent" />
       
@@ -329,8 +394,8 @@ function CTA() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" className="gap-2 px-10 h-14 text-base font-medium" data-testid="button-cta-start">
-              Get Started — It's Free
-              <ArrowRight className="w-5 h-5" />
+              <span className="text-white">Get Started — It's Free</span>
+              <ArrowRight className="w-5 h-5 text-white" />
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-6">
@@ -348,10 +413,10 @@ function Footer() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center">
+            {/* <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center">
               <Zap className="w-4 h-4 text-background" strokeWidth={2.5} />
-            </div>
-            <span className="font-display text-lg font-semibold">FinTra</span>
+            </div> */}
+            <span className="font-display text-lg font-semibold">FinTra.</span>
           </div>
           
           <div className="flex items-center gap-8 text-sm text-muted-foreground">
@@ -370,6 +435,14 @@ function Footer() {
 }
 
 export default function Home() {
+   const [waitlistOpen, setWaitlistOpen] = useState(false);
+
+    useEffect(() => {
+    const open = () => setWaitlistOpen(true);
+    window.addEventListener("fintra:waitlist-open", open);
+    return () => window.removeEventListener("fintra:waitlist-open", open);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background relative">
       <Navbar />
@@ -378,6 +451,8 @@ export default function Home() {
       <HowItWorks />
       <CTA />
       <Footer />
+
+      <Waitlist open={waitlistOpen} onOpenChange={setWaitlistOpen} />
     </div>
   );
 }
