@@ -166,7 +166,11 @@ function Hero() {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <Button size="lg" className="gap-2 px-8 h-14 text-base font-medium glow-primary text-white" data-testid="button-start-free">
+          <Button size="lg" 
+          className="gap-2 px-8 h-14 text-base font-medium glow-primary text-white" 
+          data-testid="button-start-free"
+          onClick={() => window.dispatchEvent(new Event("fintra:waitlist-open"))}
+          >
             Start Free
             <ArrowRight className="w-5 h-5" />
           </Button>
@@ -394,7 +398,8 @@ function CTA() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" className="gap-2 px-10 h-14 text-base font-medium" data-testid="button-cta-start">
-              <span className="text-white">Get Started — It's Free</span>
+              <span className="text-white"
+              onClick={() => window.dispatchEvent(new Event("fintra:waitlist-open"))}>Get Started — It's Free</span>
               <ArrowRight className="w-5 h-5 text-white" />
             </Button>
           </div>
