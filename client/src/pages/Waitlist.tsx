@@ -1,14 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, Timer, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Timer } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 
 /* ------------------------------------------------------------------ */
@@ -20,8 +13,8 @@ type WaitlistProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-const OFFER_MINUTES = 1;
-const OFFER_SECONDS = OFFER_MINUTES * 60;
+/** Bonus deadline: 28 Jan 2026, 13:00:00 IST */
+const BONUS_DEADLINE = new Date("2026-01-28T13:00:00+05:30");
 
 /* Local session tracking (browser-level) */
 const WAITLIST_STORAGE_KEY = "fintra_waitlist_v1";
@@ -35,12 +28,6 @@ type WaitlistStored = {
 /* ------------------------------------------------------------------ */
 /* HELPERS */
 /* ------------------------------------------------------------------ */
-
-function formatMMSS(total: number) {
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
 
 function readWaitlistStored(): WaitlistStored | null {
   try {
@@ -63,29 +50,36 @@ function writeWaitlistStored(email: string, bonusEligible: boolean) {
   localStorage.setItem(WAITLIST_STORAGE_KEY, JSON.stringify(payload));
 }
 
+function getSecondsLeft(target: Date) {
+  const diffMs = target.getTime() - Date.now();
+  return Math.max(0, Math.floor(diffMs / 1000));
+}
+
+function formatDDHHMMSS(totalSeconds: number) {
+  const days = Math.floor(totalSeconds / (60 * 60 * 24));
+  const hours = Math.floor((totalSeconds / (60 * 60)) % 24);
+  const minutes = Math.floor((totalSeconds / 60) % 60);
+  const seconds = totalSeconds % 60;
+  return { days, hours, minutes, seconds };
+}
+
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
 function BonusPill({ eligible }: { eligible: boolean }) {
   return (
-    <div
+    <span
       className={[
         "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
         eligible
           ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-200"
-          : "border-white/10 bg-white/5 text-muted-foreground",
+          : "border-white/10 bg-white/5 text-white/50",
       ].join(" ")}
     >
-      <span className={eligible ? "text-emerald-300" : ""}>●</span>
+      <span className={eligible ? "text-emerald-300" : "text-white/40"}>●</span>
       {eligible ? "1000 tokens reserved" : "Bonus expired"}
-    </div>
-  );
-}
-
-function ConfettiBurst() {
-  return (
-    <div className="pointer-events-none absolute inset-0">
-      {Array.from({ length: 12 }).map((_, i) => (
-        <span key={i} className={`confetti confetti-${i + 1}`} />
-      ))}
-    </div>
+    </span>
   );
 }
 
@@ -116,7 +110,10 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [bonusEligible, setBonusEligible] = useState<boolean | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(OFFER_SECONDS);
+
+  const [secondsLeft, setSecondsLeft] = useState(() =>
+    getSecondsLeft(BONUS_DEADLINE)
+  );
 
   // local session state
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
@@ -124,15 +121,15 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
   const [storedAt, setStoredAt] = useState<string | null>(null);
 
   const expired = secondsLeft <= 0;
+  const t = useMemo(() => formatDDHHMMSS(secondsLeft), [secondsLeft]);
 
-  /* Reset / hydrate modal state on open */
+  const deadlineLabel = "Bonus ends: 28 Jan 2026 • 1:00 PM IST";
+
   useEffect(() => {
     if (!open) return;
 
     const stored = readWaitlistStored();
-
     if (stored?.email) {
-      // This browser already submitted before
       setAlreadySubmitted(true);
       setStoredEmail(stored.email);
       setStoredAt(stored.submittedAt);
@@ -141,12 +138,10 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
       setBonusEligible(stored.bonusEligible);
       setSubmitted(true);
 
-      // countdown irrelevant now
-      setSecondsLeft(0);
+      setSecondsLeft(getSecondsLeft(BONUS_DEADLINE));
       return;
     }
 
-    // Fresh open
     setAlreadySubmitted(false);
     setStoredEmail(null);
     setStoredAt(null);
@@ -154,193 +149,187 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
     setEmail("");
     setSubmitted(false);
     setBonusEligible(null);
-    setSecondsLeft(OFFER_SECONDS);
+    setSecondsLeft(getSecondsLeft(BONUS_DEADLINE));
   }, [open]);
 
-  /* Countdown only while open + not submitted + not already submitted */
   useEffect(() => {
-    if (!open || submitted || alreadySubmitted) return;
-
+    if (!open) return;
     const id = window.setInterval(() => {
-      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+      setSecondsLeft(getSecondsLeft(BONUS_DEADLINE));
     }, 1000);
-
     return () => window.clearInterval(id);
-  }, [open, submitted, alreadySubmitted]);
+  }, [open]);
 
-  const offerText = useMemo(() => {
-    return expired
-      ? "Bonus expired — join anyway"
-      : "Join before the timer runs out to get 1000 free tokens";
-  }, [expired]);
+  const offerText = expired
+    ? "Bonus expired — join anyway"
+    : "Join now to reserve 1000 tokens";
 
-  const submittedLine = useMemo(() => {
-    if (!alreadySubmitted) return "We’ll email you when FinTra opens access.";
-    if (!storedEmail) return "This browser already joined the waitlist.";
-    return `This browser already joined with ${storedEmail}.`;
-  }, [alreadySubmitted, storedEmail]);
+  const submittedLine = alreadySubmitted && storedEmail
+    ? `Joined with ${storedEmail}`
+    : "We’ll email you when access opens.";
+
+  if (!open) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="font-display text-2xl tracking-tight">
-            Join the FinTra Waitlist
-          </DialogTitle>
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4 backdrop-blur-md"
+      role="dialog"
+      aria-modal="true"
+      onClick={() => onOpenChange(false)}
+    >
+      <div
+        className={[
+          "relative w-full max-w-[380px] overflow-hidden rounded-3xl",
+          "border border-white/10 bg-gradient-to-b from-[#0B1626] to-[#07101D]",
+          "shadow-[0_30px_100px_-30px_rgba(0,0,0,0.9)]",
+        ].join(" ")}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* top glow */}
+        <div className="pointer-events-none absolute -top-24 left-1/2 h-44 w-[520px] -translate-x-1/2 rounded-full bg-emerald-400/14 blur-3xl" />
 
-          <DialogDescription className="space-y-2">
-            <span className="block">Early access + updates. No spam.</span>
+        {/* Close */}
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+          aria-label="Close"
+          type="button"
+        >
+          <X size={18} />
+        </button>
 
-            {/* Countdown only before submit and only if not already submitted */}
-            {!submitted && !alreadySubmitted && (
-              <div
-                className={[
-                  "flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm",
-                  expired
-                    ? "border-border/40 bg-muted/40 text-muted-foreground"
-                    : "border-white/15 bg-white/5",
-                ].join(" ")}
-              >
-                <div className="flex items-center gap-2">
-                  <Timer className="h-4 w-4" />
-                  <span className="font-medium">{offerText}</span>
-                </div>
-
-                {!expired && (
-                  <span className="tabular-nums font-semibold">
-                    {formatMMSS(secondsLeft)}
-                  </span>
-                )}
-              </div>
-            )}
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* FORM */}
-        {!submitted && !alreadySubmitted ? (
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-
-              const eligible = !expired;
-              setBonusEligible(eligible);
-
-              const res = await submitdata(email, eligible);
-              if (res.ok) {
-                // Persist "session" locally so they can't re-submit here
-                writeWaitlistStored(email, eligible);
-
-                setAlreadySubmitted(true);
-                setStoredEmail(email.trim().toLowerCase());
-                setStoredAt(new Date().toISOString());
-                setSubmitted(true);
-              } else {
-                alert(res.message);
-              }
-            }}
-            className="space-y-4"
-          >
-            <Input
-              type="email"
-              required
-              placeholder="you@domain.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-11"
-              autoFocus
-            />
-
-            <Button type="submit" size="lg" className="w-full gap-2">
-              <span className="text-white">Join Waitlist</span>
-              <ArrowRight className="w-4 h-4 text-white" />
-            </Button>
-
-            <p className="text-xs text-muted-foreground text-center">
-              By joining, you agree to receive early-access emails.
+        <div className="relative p-5 pt-8">
+          {/* Header */}
+          <div className="text-center">
+            <h2 className="text-2xl font-semibold tracking-tight text-white">
+              Join the FinTra Waitlist
+            </h2>
+            <p className="mt-2 text-sm text-white/60">
+              Early access + updates. No spam.
             </p>
-          </form>
-        ) : (
-          /* SUCCESS / ALREADY SUBMITTED */
-          <div className="pt-2">
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6">
-              <div className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+          </div>
 
-              <div className="relative flex items-start gap-4">
-                <div className="relative grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
-                  <ConfettiBurst />
-                  <span className="text-xl">🎉</span>
-                </div>
+          {/* ✅ Slim timer strip (not a big card) */}
+          <div
+            className={[
+              "mt-5 flex items-center justify-between rounded-2xl border px-3 py-2",
+              expired ? "border-white/10 bg-white/5" : "border-white/15 bg-white/5",
+            ].join(" ")}
+          >
+            <div className="flex items-center gap-2">
+              <Timer className="h-4 w-4 text-white/70" />
+              <div className="leading-tight">
+                <div className="text-xs font-medium text-white/90">{offerText}</div>
+                <div className="text-[11px] text-white/45">{deadlineLabel}</div>
+              </div>
+            </div>
 
-                <div className="flex-1 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-display text-xl font-semibold tracking-tight">
-                      {alreadySubmitted ? "Already submitted." : "You’re in."}
-                    </h3>
+            <div className="tabular-nums text-xs font-semibold text-white/90">
+              {expired
+                ? "00:00:00:00"
+                : `${pad2(t.days)}:${pad2(t.hours)}:${pad2(t.minutes)}:${pad2(t.seconds)}`}
+            </div>
+          </div>
 
-                    {bonusEligible !== null && (
-                      <BonusPill eligible={bonusEligible} />
-                    )}
+          {/* BODY */}
+          {!submitted && !alreadySubmitted ? (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+
+                const eligible = !expired;
+                setBonusEligible(eligible);
+
+                const res = await submitdata(email, eligible);
+                if (res.ok) {
+                  writeWaitlistStored(email, eligible);
+
+                  setAlreadySubmitted(true);
+                  setStoredEmail(email.trim().toLowerCase());
+                  setStoredAt(new Date().toISOString());
+                  setSubmitted(true);
+                } else {
+                  alert(res.message);
+                }
+              }}
+              className="mt-5 space-y-3"
+            >
+              <Input
+                type="email"
+                required
+                placeholder="you@domain.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                autoFocus
+              />
+
+              <Button
+                type="submit"
+                className="w-full gap-2 rounded-2xl py-6 text-sm font-semibold bg-emerald-400 text-black hover:bg-emerald-300"
+              >
+                Join Waitlist
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+
+              <p className="text-[11px] text-center text-white/45">
+                By joining, you agree to receive early-access emails.
+              </p>
+            </form>
+          ) : (
+            <div className="mt-5">
+              {/* ✅ Single compact success card (less text, less padding) */}
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-400/10 blur-3xl" />
+
+                <div className="relative flex items-start gap-3">
+                  <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/5">
+                    <span className="text-lg">🎉</span>
                   </div>
 
-                  <p className="text-sm text-muted-foreground">{submittedLine}</p>
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-semibold text-white">
+                        You’re on the list
+                      </h3>
+                      {bonusEligible !== null && (
+                        <BonusPill eligible={bonusEligible} />
+                      )}
+                    </div>
 
-                  {bonusEligible ? (
-                    <p className="text-sm">
-                      <span className="text-emerald-200 font-medium">
-                        1000 tokens
-                      </span>{" "}
-                      are reserved for you.
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      The bonus expired, but you’re on the waitlist.
-                    </p>
-                  )}
+                    <p className="mt-2 text-sm text-white/60">{submittedLine}</p>
 
-                  {alreadySubmitted && storedAt && (
-                    <p className="text-xs text-muted-foreground">
-                      Submitted on:{" "}
-                      <span className="tabular-nums">
-                        {new Date(storedAt).toLocaleString()}
-                      </span>
-                    </p>
-                  )}
+                    {alreadySubmitted && storedAt && (
+                      <p className="mt-2 text-[11px] text-white/45">
+                        Submitted:{" "}
+                        <span className="tabular-nums">
+                          {new Date(storedAt).toLocaleString()}
+                        </span>
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* ✅ Only ONE primary action (Done) */}
               <Button
-                variant="outline"
-                className="w-full border-white/15 hover:border-white/30"
+                className="mt-4 w-full rounded-2xl bg-emerald-400 text-black hover:bg-emerald-300 py-3 text-sm font-semibold"
                 onClick={() => onOpenChange(false)}
               >
-                Close
-              </Button>
-
-              <Button className="w-full" onClick={() => onOpenChange(false)}>
                 Done
               </Button>
-            </div>
 
-            {/* Optional: debug/reset button (remove in production) */}
-            {/* <Button
-              variant="ghost"
-              className="w-full mt-2 text-xs text-muted-foreground"
-              onClick={() => {
-                localStorage.removeItem(WAITLIST_STORAGE_KEY);
-                setAlreadySubmitted(false);
-                setSubmitted(false);
-                setEmail("");
-                setBonusEligible(null);
-                setSecondsLeft(OFFER_SECONDS);
-              }}
-            >
-              Reset (dev only)
-            </Button> */}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="mt-3 w-full text-center text-xs text-white/45 hover:text-white/65"
+              >
+                Not now
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
