@@ -3,7 +3,7 @@ import QRCode from "react-qr-code";
 import { X } from "lucide-react";
 
 const DOWNLOAD_URL = "https://your-link-here.com"; // replace
-const LAUNCH_DATE_STR = "2026-01-29T00:00:00+05:30"; // IST launch moment
+const LAUNCH_DATE_STR = "2026-02-15T00:00:00+05:30"; // IST launch moment
 
 type DownloadProps = {
   open: boolean;
