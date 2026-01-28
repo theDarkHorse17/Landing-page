@@ -122,7 +122,7 @@ export default function Download({ open, onOpenChange }: DownloadProps) {
                     Available on
                   </p>
                   <p className="text-lg font-bold text-emerald-400">
-                    29 Jan 2026
+                    15 Feb 2026
                   </p>
                 </div>
               </div>
