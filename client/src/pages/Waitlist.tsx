@@ -13,8 +13,9 @@ type WaitlistProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-/** Bonus deadline: 28 Jan 2026, 13:00:00 IST */
-const BONUS_DEADLINE = new Date("2026-01-28T13:00:00+05:30");
+/** Bonus is available for 60 seconds after the modal is first opened (per browser) */
+const BONUS_WINDOW_SECONDS = 60;
+const BONUS_ANCHOR_KEY = "fintra_waitlist_bonus_anchor_v1";
 
 /* Local session tracking (browser-level) */
 const WAITLIST_STORAGE_KEY = "fintra_waitlist_v1";
@@ -23,6 +24,10 @@ type WaitlistStored = {
   email: string;
   submittedAt: string; // ISO
   bonusEligible: boolean;
+};
+
+type BonusAnchorStored = {
+  openedAt: string; // ISO
 };
 
 /* ------------------------------------------------------------------ */
@@ -48,6 +53,30 @@ function writeWaitlistStored(email: string, bonusEligible: boolean) {
     bonusEligible,
   };
   localStorage.setItem(WAITLIST_STORAGE_KEY, JSON.stringify(payload));
+}
+
+function readBonusAnchor(): BonusAnchorStored | null {
+  try {
+    const raw = localStorage.getItem(BONUS_ANCHOR_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as BonusAnchorStored;
+    if (!parsed?.openedAt) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeBonusAnchorIfMissing() {
+  const existing = readBonusAnchor();
+  if (existing?.openedAt) return existing.openedAt;
+  const openedAt = new Date().toISOString();
+  localStorage.setItem(BONUS_ANCHOR_KEY, JSON.stringify({ openedAt }));
+  return openedAt;
+}
+
+function getBonusDeadlineFromAnchor(openedAtIso: string) {
+  return new Date(new Date(openedAtIso).getTime() + BONUS_WINDOW_SECONDS * 1000);
 }
 
 function getSecondsLeft(target: Date) {
@@ -111,9 +140,8 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
   const [submitted, setSubmitted] = useState(false);
   const [bonusEligible, setBonusEligible] = useState<boolean | null>(null);
 
-  const [secondsLeft, setSecondsLeft] = useState(() =>
-    getSecondsLeft(BONUS_DEADLINE)
-  );
+  const [bonusAnchorIso, setBonusAnchorIso] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(() => 0);
 
   // local session state
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
@@ -123,10 +151,16 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
   const expired = secondsLeft <= 0;
   const t = useMemo(() => formatDDHHMMSS(secondsLeft), [secondsLeft]);
 
-  const deadlineLabel = "Bonus ends: 28 Jan 2026 • 1:00 PM IST";
+  const deadlineLabel = "Bonus ends in 1 minute";
 
   useEffect(() => {
     if (!open) return;
+
+    // anchor the bonus window once per browser
+    const anchorIso = writeBonusAnchorIfMissing();
+    setBonusAnchorIso(anchorIso);
+
+    const deadline = getBonusDeadlineFromAnchor(anchorIso);
 
     const stored = readWaitlistStored();
     if (stored?.email) {
@@ -138,7 +172,7 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
       setBonusEligible(stored.bonusEligible);
       setSubmitted(true);
 
-      setSecondsLeft(getSecondsLeft(BONUS_DEADLINE));
+      setSecondsLeft(getSecondsLeft(deadline));
       return;
     }
 
@@ -149,24 +183,31 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
     setEmail("");
     setSubmitted(false);
     setBonusEligible(null);
-    setSecondsLeft(getSecondsLeft(BONUS_DEADLINE));
+    setSecondsLeft(getSecondsLeft(deadline));
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    // ✅ stop timer once submitted (or already submitted)
+    if (!open || submitted || alreadySubmitted) return;
+
     const id = window.setInterval(() => {
-      setSecondsLeft(getSecondsLeft(BONUS_DEADLINE));
+      const anchor = readBonusAnchor()?.openedAt ?? bonusAnchorIso;
+      if (!anchor) return;
+      const deadline = getBonusDeadlineFromAnchor(anchor);
+      setSecondsLeft(getSecondsLeft(deadline));
     }, 1000);
+
     return () => window.clearInterval(id);
-  }, [open]);
+  }, [open, bonusAnchorIso, submitted, alreadySubmitted]);
 
   const offerText = expired
     ? "Bonus expired — join anyway"
     : "Join now to reserve 1000 tokens";
 
-  const submittedLine = alreadySubmitted && storedEmail
-    ? `Joined with ${storedEmail}`
-    : "We’ll email you when access opens.";
+  const submittedLine =
+    alreadySubmitted && storedEmail
+      ? `Joined with ${storedEmail}`
+      : "We’ll email you when access opens.";
 
   if (!open) return null;
 
@@ -209,27 +250,35 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
             </p>
           </div>
 
-          {/* ✅ Slim timer strip (not a big card) */}
-          <div
-            className={[
-              "mt-5 flex items-center justify-between rounded-2xl border px-3 py-2",
-              expired ? "border-white/10 bg-white/5" : "border-white/15 bg-white/5",
-            ].join(" ")}
-          >
-            <div className="flex items-center gap-2">
-              <Timer className="h-4 w-4 text-white/70" />
-              <div className="leading-tight">
-                <div className="text-xs font-medium text-white/90">{offerText}</div>
-                <div className="text-[11px] text-white/45">{deadlineLabel}</div>
+          {/* ✅ Timer shows ONLY before submission */}
+          {!submitted && !alreadySubmitted && (
+            <div
+              className={[
+                "mt-5 flex items-center justify-between rounded-2xl border px-3 py-2",
+                expired
+                  ? "border-white/10 bg-white/5"
+                  : "border-white/15 bg-white/5",
+              ].join(" ")}
+            >
+              <div className="flex items-center gap-2">
+                <Timer className="h-4 w-4 text-white/70" />
+                <div className="leading-tight">
+                  <div className="text-xs font-medium text-white/90">
+                    {offerText}
+                  </div>
+                  <div className="text-[11px] text-white/45">{deadlineLabel}</div>
+                </div>
+              </div>
+
+              <div className="tabular-nums text-xs font-semibold text-white/90">
+                {expired
+                  ? "00:00:00:00"
+                  : `${pad2(t.days)}:${pad2(t.hours)}:${pad2(t.minutes)}:${pad2(
+                      t.seconds
+                    )}`}
               </div>
             </div>
-
-            <div className="tabular-nums text-xs font-semibold text-white/90">
-              {expired
-                ? "00:00:00:00"
-                : `${pad2(t.days)}:${pad2(t.hours)}:${pad2(t.minutes)}:${pad2(t.seconds)}`}
-            </div>
-          </div>
+          )}
 
           {/* BODY */}
           {!submitted && !alreadySubmitted ? (
@@ -266,7 +315,7 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
 
               <Button
                 type="submit"
-                className="w-full gap-2 rounded-2xl py-6 text-sm font-semibold bg-emerald-400 text-black hover:bg-emerald-300"
+                className="w-full gap-2 rounded-2xl py-3 text-sm font-semibold bg-emerald-400 text-white hover:bg-emerald-300"
               >
                 Join Waitlist
                 <ArrowRight className="w-4 h-4" />
@@ -278,7 +327,7 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
             </form>
           ) : (
             <div className="mt-5">
-              {/* ✅ Single compact success card (less text, less padding) */}
+              {/* ✅ Single compact success card */}
               <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4">
                 <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-emerald-400/10 blur-3xl" />
 
@@ -319,13 +368,13 @@ export default function Waitlist({ open, onOpenChange }: WaitlistProps) {
                 Done
               </Button>
 
-              <button
+              {/* <button
                 type="button"
                 onClick={() => onOpenChange(false)}
                 className="mt-3 w-full text-center text-xs text-white/45 hover:text-white/65"
               >
                 Not now
-              </button>
+              </button> */}
             </div>
           )}
         </div>

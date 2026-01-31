@@ -111,15 +111,7 @@ function Navbar({
         </div>
 
         <div className="flex items-center gap-3">
-          <Button
-            size="sm"
-            className="gap-2 font-medium text-white"
-            data-testid="button-download-app"
-            onClick={onDownload}
-            type="button"
-          >
-            Download App
-          </Button>
+         
 
           <Button
             size="sm"
